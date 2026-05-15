@@ -1,4 +1,4 @@
-# Zepto Sales Dashboard
+# Sales Dashboard
 
 This is a live Power BI dashboard project built using:
 - Power BI
