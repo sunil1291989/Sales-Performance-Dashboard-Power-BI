@@ -1,0 +1,566 @@
+--1. Backup & Restore
+--बहुत ज्यादा पूछा जाता है।
+--Types:
+--Full Backup
+--Differential Backup
+--Transaction Log Backup
+
+--Full Backup
+backup database zepto
+to disk = 'D:\Backup_DB\zepto.bak'
+
+----- Restore
+RESTORE DATABASE AdventureWorks
+FROM DISK= 'D:\Backup_DB\zepto.bak'
+
+--2. User & Security
+--Questions:
+--Login vs User difference
+--SQL Authentication vs Windows Authentication
+--Roles
+--Permissions
+create Login sunil with password = 'sunil@123'
+
+create user sunil for login sunil 
+alter role db_datareader add member sunil
+
+
+--. SQL Server Services
+--Important Services:
+--SQL Server
+--SQL Agent
+--SQL Browser
+
+--Interview
+--Q. SQL Service down हो जाए तो?
+--Answer:
+--Services check
+--Error log check
+--Disk space check
+--Event Viewer
+--Restart service
+--Startup parameter verify
+
+
+--4. Performance Tuning
+
+--Very important for experienced DBA.
+
+--Topics:
+--Index
+--Fragmentation
+--Blocking
+--Deadlock
+--Execution Plan
+--Missing Index
+--Long running query
+
+-- Blocking practice_code
+execute sp_who2
+
+
+--5. Maintenance Plans
+--Use:
+--Backup automation
+--Rebuild index
+--Cleanup old backup
+
+--6. Monitoring Queries
+select * from sys.dm_exec_requests
+
+--7. Disk Space Monitoring
+EXEC sp_spaceused
+
+--Real Production DBA Daily Tasks
+--Morning Checklist
+--Daily:
+--Backup success check
+--Failed jobs check
+--Disk space check
+--Blocking check
+--SQL services check
+--Error log check
+--Server health check
+
+--Very Important Interview Questions
+--Fresher + Experience दोनों में पूछे जाते हैं
+--Basic:
+--SQL Server architecture
+--MDF / LDF / NDF
+--Recovery model
+--TempDB
+--SQL Agent
+Indexes
+
+--Intermediate:
+--Backup strategy
+--Log shipping
+--Replication
+--Mirroring
+--Always On
+--Deadlock
+--Blocking
+
+--Advanced:
+--Failover clustering
+--Performance tuning
+--DMV
+--Wait stats
+--Query optimization
+--Memory tuning
+
+--Realistic Experience Answers
+
+--अगर interviewer पूछे:
+
+--“Current project में क्या करते हो?”
+--Answer:
+--Daily backup monitoring
+--SQL Agent jobs monitoring
+--User access management
+--Database restore activities
+--Performance troubleshooting
+--Blocking/deadlock resolution
+--Disk space monitoring
+--Production support
+--SQL Server health check
+
+--Important DMV Commands
+-- Running sessions
+execute sp_who2
+
+-- Database files
+sp_zepto
+
+-- Current connections
+select * from sys.dm_exec_requests
+
+---- Blocking
+select * from sys.dm_exec_requests
+
+--Practice Daily
+--ये daily करें:
+--Database backup
+--Restore
+--Login create
+--SQL Agent Job create
+--Blocking create/check
+--Import/export
+--Maintenance Plan
+--Index rebuild
+
+--Interview में Confidence कैसे दिखाना है
+
+--Direct बोलिए:
+--“I have workred on monitring, restore, fully backup, sql agent job,login management 
+    --performance troubleshooting, and production support activities in SQL Server environment.”
+
+
+
+--MSSQL DBA Practical Training
+
+--सबसे पहले सबसे important topic:
+
+--PART 1 — SQL Server Backup Practical
+
+--क्योंकि DBA interview में सबसे ज्यादा पूछा जाता है:
+
+--Backup कैसे लेते हो?
+--Restore कैसे करते हो?
+--Types of backup?
+--Production में क्या strategy use करते हो?
+
+
+--STEP 1 — Test Database Create
+create database dba_practice;
+use dba_practice; 
+
+create table Employee
+( id int,
+name varchar(100),
+salary int);
+
+INSERT INTO Employee
+VALUES
+(1,'Sunil',50000),
+(2,'Rahul',40000),
+(3,'Amit',60000)
+GO
+select * from Employee; 
+
+--समझिए क्या हुआ
+
+--हमने:
+
+--Database बनाया
+--Table बनाई
+--Sample data insert किया
+
+--अब इसी database पर पूरा backup practical करेंगे।
+
+--STEP 2 — Backup Folder Create करें
+
+--अपने system में folder बनाइए:
+
+--D:\Backup_DB
+
+--अगर D drive नहीं है तो:
+
+--D:\Backup_DB
+
+--STEP 3 — Full Backup लेना
+Backup database dba_practice
+to Disk = 'D:\Backup_DB\dba_practice.bak'
+
+
+--Interview Answer
+--Q. Full Backup क्या होता है?
+--Answer:
+--Full Backup contains complete database data and objects at the time of backup.
+
+--STEP 4 — Backup Verify करना
+--Folder open करें:
+
+---STEP 5 — Backup History Check करना
+select 
+database_name,
+backup_start_date,
+backup_finish_date,
+   type
+   FROM msdb.dbo.backupset
+ORDER BY backup_finish_date DESC 
+
+--STEP 6 — Data Delete करके Test करें
+--अब table का data delete करें:
+delete from Employee;
+SELECT * FROM Employee
+
+--Real DBA Scenario
+
+--Production में गलती से data delete हो गया।
+
+--अब DBA क्या करेगा?
+--Restore करेगा।
+
+--STEP 7 — Database Restore करना
+
+--सबसे पहले database single user mode में करें:
+
+use master;
+alter database dba_practice
+ set SINGLE_USER
+with rollback immediate
+Go
+--अब Restore करें
+
+Restore database dba_practice
+from disk = 'D:\Backup_DB\dba_practice.bak'
+With REPLACE
+GO
+
+--वापस Multi User करें
+
+ALTER DATABASE dba_practice
+SET MULTI_USER 
+GO
+
+
+USE DBA_Practice
+GO
+
+SELECT * FROM Employee
+
+
+--Interview Important Questions
+--Q1. Backup और Restore में difference?
+--Backup	                     Restore
+--Data copy create करता है	   Data वापस लाता है
+--Disaster recovery के लिए	   Data recovery के लिए
+
+--Q2. WITH REPLACE क्यों use करते हैं?
+--Answer:
+
+--Existing database overwrite करने के लिए।
+--Q3. SINGLE_USER mode क्यों?
+--Answer:
+--ताकि कोई user database use न करे restore के समय।
+
+--Production Real Scenario
+--Interview में बोल सकते हैं:
+--“I have taken full database backups using T-SQL and restored databases during testing and recovery scenarios.”
+
+
+--PART 2 — Differential Backup Practical
+
+--यह बहुत important DBA topic है।
+
+--Experienced DBA interview में अक्सर पूछते हैं:
+--Full backup vs Differential backup
+--Differential backup क्यों use करते हैं?
+--Restore sequence क्या होता है?
+--Recovery time कैसे reduce करते हैं?
+
+
+--पहले समझिए Differential Backup क्या होता है आसान भाषा में:
+--Full Backup
+--पूरा database backup करता है।
+
+--Differential Backup
+--Last full backup के बाद जो changes हुए हैं सिर्फ वही backup करता है।
+
+--Example
+
+--मान लीजिए:
+
+--Time	Backup Type
+--10 AM	Full Backup
+--1 PM	Differential
+--4 PM	Differential
+--अब 5 PM पर crash हो गया।
+--तो:
+--पहले Full Restore
+--फिर Latest Differential Restore बस।
+
+--Practical Start
+
+--हम previous database use करेंगे:
+
+--STEP 1 — Full Backup लें
+
+BACKUP DATABASE DBA_Practice
+TO DISK = 'D:\Backup_DB\dba_practice_full.bak'
+WITH INIT
+GO
+
+--WITH INIT क्या करता है?
+--पुरानी backup file overwrite करता है।
+
+--STEP 2 — New Data Insert करें
+USE DBA_Practice
+GO
+
+INSERT INTO Employee
+VALUES
+(4,'Vikas',70000),
+(5,'Rohit',45000)
+GO
+
+SELECT * FROM Employee
+
+--समझिए
+
+--अब:
+
+--Full backup पुराना data रखता है
+--New inserted rows differential में जाएंगी
+
+
+--STEP 3 — Differential Backup लें
+backup database DBA_Practice
+to disk = 'D:\Backup_DB\dba_practice_diff.bak'
+with DIFFERENTIAL
+GO
+
+--क्या हुआ?
+
+--यह backup सिर्फ:
+
+--Full backup के बाद हुए changes save करेगा।
+
+--STEP 4 — और Data Change करें
+
+DELETE FROM Employee
+WHERE Id = 4
+GO
+
+SELECT * FROM Employee
+
+--अब Recovery करेंगे
+--STEP 5 — Restore करने से पहले Database SINGLE_USER करें
+
+ALTER DATABASE DBA_Practice
+SET SINGLE_USER
+WITH ROLLBACK IMMEDIATE
+GO
+
+--STEP 6 — Full Backup Restore करें
+
+use master;
+--IMPORTANT:
+RESTORE DATABASE DBA_Practice
+FROM DISK = 'D:\Backup_DB\dba_practice_full.bak'
+WITH NORECOVERY, REPLACE
+GO
+
+---NORECOVERY क्यों?
+--क्योंकि अभी Differential backup भी restore करना है।
+
+RESTORE DATABASE DBA_Practice
+FROM DISK = 'D:\Backup_DB\dba_practice_diff.bak'
+WITH RECOVERY
+GO
+
+--STEP 8 — MULTI_USER Mode करें
+ALTER DATABASE DBA_Practice
+SET MULTI_USER
+GO
+use DBA_Practice 
+
+SELECT * FROM Employee
+
+
+--क्या Result आएगा?
+
+--आपको:
+
+--Vikas
+--Rohit
+
+--दोनों rows मिलेंगी क्योंकि Differential backup में save थीं।
+
+--लेकिन:
+
+--बाद में delete की गई row वापस आ जाएगी।
+--Restore Sequence बहुत Important है
+--हमेशा याद रखें:
+--1. Full Backup Restore
+--2. Differential Restore
+--Interview Questions
+--Q1. Differential Backup क्या है?
+--Answer:
+
+--Differential backup contains all changes made since the last full backup.
+
+--Q2. Differential backup का advantage?
+--Answer:
+--Faster restore
+--Smaller size than full backup
+--Reduces recovery time
+--Q3. NORECOVERY क्यों use करते हैं?
+--Answer:
+
+--Database restore state में रहता है ताकि next backup restore हो सके।
+
+--Q4. RECOVERY क्यों use करते हैं?
+--Answer:
+--Database online लाने के लिए।
+
+--Real Production Scenario
+--Daily Backup Strategy
+--Time	Backup
+--Sunday	Full Backup
+--Every 4 Hours	Differential
+--Every 15 Min	Transaction Log
+
+--Real DBA Interview Answer
+
+--“We use weekly full backups and periodic differential backups to reduce restore time and backup size.”
+
+--Very Important Concept
+--Full Backup बड़ा होता है
+--Differential छोटा होता है
+
+--इसलिए production में differential use करते हैं।
+
+--PART 3 — Transaction Log Backup Practical
+
+--पहले समझिए Transaction Log Backup क्या होता है
+
+--जब भी:
+--INSERT
+--UPDATE
+--DELETE
+--होता है…
+--तो SQL Server पहले transaction log file (.ldf) में लिखता है।
+
+--Transaction Log Backup क्या save करता है?
+
+--यह save करता है:
+
+--सभी transactions
+--database changes
+--point-in-time recovery data
+
+
+---सबसे Important Concept
+--Transaction Log Backup तभी काम करेगा जब database:
+--FULL Recovery Model में हो
+
+--STEP 1 — Recovery Model Check करें
+select 
+name,
+ recovery_model_desc
+ from sys.databases
+ where name ='DBA_Practice'
+
+ --STEP 2 — FULL Recovery Model Enable करें
+
+ ALTER DATABASE DBA_Practice
+SET RECOVERY FULL
+GO
+
+--Interview Question
+--Q. Transaction Log Backup SIMPLE recovery में क्यों नहीं चलता?
+--Answer:
+--Because SIMPLE recovery automatically truncates log records and does not support log backups.
+
+--STEP 3 — Full Backup लेना जरूरी है
+--Transaction log backup से पहले Full Backup mandatory है।
+BACKUP DATABASE DBA_Practice
+TO DISK = 'D:\Backup_DB\dba_practice_diff.bak'
+WITH INIT
+GO
+
+USE DBA_Practice
+GO
+
+INSERT INTO Employee
+VALUES
+(6,'Karan',55000),
+(7,'Ajay',65000)
+GO
+
+SELECT * FROM Employee
+
+--STEP 5 — Transaction Log Backup लें
+backup log DBA_Practice
+to disk = 'D:\Backup_DB\dba_practice_log.bak'
+
+--क्या हुआ?
+
+--अब:
+--Insert transactions
+--Log backup में save हो गईं
+
+--STEP 6 — Simulate Disaster
+--अब data delete करें:
+DELETE FROM Employee
+WHERE Id IN (6,7)
+GO
+
+SELECT * FROM Employee
+
+--अब Recovery करेंगे
+
+--STEP 7 — Database SINGLE_USER करें
+
+USE master
+GO
+
+ALTER DATABASE DBA_Practice
+SET SINGLE_USER
+WITH ROLLBACK IMMEDIATE
+GO
+--STEP 8 — Full Backup Restore करें
+
+restore database DBA_Practice
+from disk = 'D:\Backup_DB\dba_practice_full.bak'
+with norecovery, replace
+go
+
+--STEP 9 — Transaction Log Restore करें
+
+RESTORE LOG DBA_Practice
+FROM DISK = 'D:\Backup_DB\DBA_Practice_Log.trn'
+WITH RECOVERY
+GO
